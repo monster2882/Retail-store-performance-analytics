@@ -3,7 +3,7 @@ Project used greenplum, clickhouse, airflow, superset
 
 Project Name: Data Integration and Showcase Building
 Overview
-This project aims to automate the process of data integration and showcase construction using various tools and technologies, including Greenplum, Clickhouse, Apache Superset, and Apache Airflow. It involves the extraction, transformation, and loading (ETL) of data from multiple sources into data showcases for analytical purposes.
+This project aims to automate the process of data integration and showcase construction using various tools and technologies, including Greenplum, Clickhouse, Apache Superset, and Apache Airflow. It involves the extraction, transformation, and loading (ELT) of data from multiple sources into data showcases for analytical purposes.
 
 Technical Components
 1. Data Sources
@@ -34,7 +34,7 @@ Promotion Types (promo_types)
 
 Description: List of the current promo types in the company at the time of reporting.
 2. Data Processing and Workflow
-The ETL process is fully automated using Apache Airflow, ensuring seamless data extraction, transformation, and loading.
+The ELT process is fully automated using Apache Airflow, ensuring seamless data extraction, transformation, and loading.
 3. Data Storage
 Data showcases are loaded into Clickhouse for efficient querying and analysis.
 4. Reporting
