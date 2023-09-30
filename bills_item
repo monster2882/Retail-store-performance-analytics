@@ -1,0 +1,16 @@
+-- std2_53.bills_item definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.bills_item;
+
+CREATE TABLE std2_53.bills_item (
+	billnum int8 NULL,
+	billitem int8 NULL,
+	material int8 NULL,
+	qty int8 NULL,
+	netval numeric(17, 2) NULL,
+	tax numeric(17, 2) NULL,
+	rpa_sat numeric(17, 2) NULL
+)
+DISTRIBUTED BY (billnum);

@@ -1,0 +1,13 @@
+-- std2_53.coupon_info definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.coupon_info;
+
+CREATE TABLE std2_53.coupon_info (
+	product_bill text NULL,
+	price_in_bill int4 NULL,
+	type_promo int4 NULL,
+	size_of_sale text NULL
+)
+DISTRIBUTED BY (product_bill);

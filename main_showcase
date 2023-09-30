@@ -1,0 +1,29 @@
+-- std2_53.main_project_showcase definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.main_project_showcase;
+
+CREATE TABLE std2_53.main_project_showcase (
+	"Store code" text NULL,
+	"Store" text NULL,
+	"Turnover" numeric NULL,
+	"Discounts from Coupons" numeric NULL,
+	"Turnover with Discount" numeric NULL,
+	"Number of Sold Items" int8 NULL,
+	"Number of Checks" int8 NULL,
+	"Traffic" numeric NULL,
+	"Number of Items from Coupons" int8 NULL,
+	"Percentage of Discounted Items" numeric NULL,
+	"Average Items per Check" numeric NULL,
+	"Store Conversion Rate, %" numeric NULL,
+	"Average Check Amount" numeric NULL,
+	"Average Revenue per Visitor" numeric NULL
+)
+WITH (
+	appendonly=true,
+	orientation=column,
+	compresstype=zstd,
+	compresslevel=1
+)
+DISTRIBUTED RANDOMLY;

@@ -1,0 +1,56 @@
+CREATE OR REPLACE FUNCTION std2_53.load_pxf(p_table text, p_pxf_table text, user_id text, user_password text)
+	RETURNS int4
+	LANGUAGE plpgsql
+	VOLATILE
+AS $$
+	
+	
+	
+	
+	
+	
+
+DECLARE
+    v_ext_table text;
+    v_temp_table text;
+    v_sql text;
+    v_pxf text;
+    v_result int;
+BEGIN
+    v_ext_table = p_table || '_ext';
+    v_temp_table = p_table || '_tmp';
+	
+    EXECUTE 'TRUNCATE TABLE ' || p_table;
+    execute 'DROP EXTERNAL TABLE IF EXISTS ' || v_ext_table;
+   
+    v_pxf = 'pxf://' || p_pxf_table || '?PROFILE=Jdbc&JDBC_DRIVER=org.postgresql.Driver&DB_URL=jdbc:postgresql://192.168.214.212:5432/postgres&USER=' || user_id || '&PASS=' || user_password;
+   
+    raise notice 'PXF CONNECTION STRING: %', v_pxf;
+
+    v_sql = 'CREATE EXTERNAL TABLE ' || v_ext_table || '(like ' || p_table || ')
+            location (''' || v_pxf || ''')
+            on all
+            FORMAT ''CUSTOM'' ( FORMATTER=''pxfwritable_import'')
+            ENCODING ''UTF8''';
+
+    raise notice 'EXTERNAL TABLE IS: %', v_sql;
+
+    execute v_sql;
+
+    v_sql = 'INSERT INTO ' || p_table || ' SELECT * FROM ' || v_ext_table;
+
+    execute v_sql;
+
+    get diagnostics v_result = ROW_COUNT;
+    raise notice 'INSERTED ROWS: %', v_result;
+
+    RETURN v_result;
+END;
+
+
+
+
+
+
+$$
+EXECUTE ON ANY;

@@ -1,0 +1,96 @@
+CREATE OR REPLACE FUNCTION std2_53.f_load_simple_partition(p_table text, p_partition_key text, p_start_date timestamp, p_end_date timestamp, p_pxf_table text, p_user_id text, p_pass text)
+	RETURNS int4
+	LANGUAGE plpgsql
+	VOLATILE
+AS $$
+	
+DECLARE
+    v_ext_table text;
+    v_temp_table text;
+    v_sql text;
+    v_pxf text;
+    v_result int;
+    v_dist_key text;
+    v_params text;
+    v_where text;
+    v_load_interval interval;
+    v_start_date date;
+    v_end_date date;
+    v_table_oid int4;
+    v_cnt int8;
+    v_current_date date;
+BEGIN
+    v_ext_table = p_table || '_ext';
+    v_temp_table = p_table || '_tmp';
+
+    select c.oid
+    into v_table_oid
+    from pg_class as c inner join pg_namespace as n on c.relnamespace = n.oid
+    where n.nspname || '.' || c.relname = p_table
+    limit 1;
+
+    if v_table_oid = 0 or v_table_oid is null then
+        v_dist_key = 'DISTRIBUTED RANDOMLY';
+    else
+        v_dist_key = pg_get_table_distributedby(v_table_oid);
+    end if;
+
+    select coalesce('with (' || array_to_string(reloptions, ', ') || ')', '')
+    from pg_class
+    into v_params
+    where oid = p_table::regclass;
+
+    execute 'DROP EXTERNAL TABLE IF EXISTS ' || v_ext_table;
+
+    v_load_interval = '1 month'::interval;
+    v_start_date := date_trunc('month', p_start_date);
+    v_end_date := date_trunc('month', p_end_date) + interval '1 month'; -- Extend by one month for the loop
+
+    v_pxf = 'pxf://' || p_pxf_table || '?PROFILE=Jdbc&JDBC_DRIVER=org.postgresql.Driver&DB_URL=jdbc:postgresql://192.168.214.212:5432/postgres&USER=' || p_user_id || '&PASS=' || p_pass;
+
+    raise notice 'PXF CONNECTION STRING: %', v_pxf;
+
+    v_sql = 'CREATE EXTERNAL TABLE ' || v_ext_table || '(like ' || p_table || ')
+            location (''' || v_pxf || ''')
+            on all
+            FORMAT ''CUSTOM'' ( FORMATTER=''pxfwritable_import'')
+            ENCODING ''UTF8''';
+
+    raise notice 'EXTERNAL TABLE IS: %', v_sql;
+
+    execute v_sql;
+
+    v_current_date := v_start_date;
+    while v_current_date < v_end_date loop
+        v_where = p_partition_key || ' >= ''' || v_current_date || '''::date and ' || p_partition_key || ' < ''' || (v_current_date + interval '1 month') || '''::date';
+
+        v_sql = 'DROP TABLE IF EXISTS ' || v_temp_table || ';
+                CREATE TABLE ' || v_temp_table || '(like ' || p_table || ') ' || v_params || ' ' || v_dist_key || ';';
+
+        raise notice 'TEMP TABLE IS: %', v_sql;
+
+        execute v_sql;
+
+        v_sql = 'INSERT INTO ' || v_temp_table || ' select * from ' || v_ext_table || ' where ' || v_where;
+
+        execute v_sql;
+
+        get diagnostics v_cnt = ROW_COUNT;
+        raise notice 'INSERTED ROWS: %', v_cnt;
+
+        v_sql = 'ALTER TABLE ' || p_table || ' EXCHANGE PARTITION FOR (DATE ''' || v_current_date || ''') WITH TABLE ' || v_temp_table || ' WITH VALIDATION';
+
+        raise notice 'EXCHANGE PARTITION SCRIPT: %', v_sql;
+
+        execute v_sql;
+
+        v_current_date := v_current_date + interval '1 month';
+    end loop;
+
+    execute 'SELECT COUNT(1) FROM ' || p_table || ' WHERE ' || p_partition_key || ' >= ''' || v_start_date || '''::date AND ' || p_partition_key || ' < ''' || v_end_date || '''::date' into v_result;
+
+    RETURN v_result;
+END;
+
+$$
+EXECUTE ON ANY;

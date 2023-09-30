@@ -1,0 +1,11 @@
+-- std2_53.chanel definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.chanel;
+
+CREATE TABLE std2_53.chanel (
+	distr_chan varchar(1) NULL,
+	txtsh text NULL
+)
+DISTRIBUTED REPLICATED;

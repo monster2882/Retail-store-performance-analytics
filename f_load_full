@@ -1,0 +1,36 @@
+CREATE OR REPLACE FUNCTION std2_53.f_load_full(p_table text, p_file_name text)
+	RETURNS int4
+	LANGUAGE plpgsql
+	VOLATILE
+AS $$
+	
+	
+DECLARE
+    v_ext_table_name text;
+    v_sql text;
+    v_gpfdist text;
+    v_result int;
+BEGIN
+    v_ext_table_name = p_table || '_gpfdist_ext';
+
+    EXECUTE 'TRUNCATE TABLE ' || p_table;
+    EXECUTE 'DROP EXTERNAL TABLE IF EXISTS ' || v_ext_table_name;
+
+    v_gpfdist = 'gpfdist://172.16.128.150:8080/' || p_file_name || '.csv';
+
+    v_sql = 'CREATE EXTERNAL TABLE ' || v_ext_table_name || ' (LIKE ' || p_table || ')
+            LOCATION (''' || v_gpfdist || ''')
+            FORMAT ''CSV'' (HEADER DELIMITER '';'' NULL '''' ESCAPE ''"'' QUOTE ''"'' )
+            ENCODING ''UTF8''';
+
+    RAISE NOTICE 'EXTERNAL TABLE SQL: %', v_sql;
+
+    EXECUTE v_sql;
+    EXECUTE 'INSERT INTO ' || p_table || ' SELECT * FROM ' || v_ext_table_name;
+    EXECUTE 'SELECT COUNT(1) FROM ' || p_table INTO v_result;
+
+    RETURN v_result;
+END;
+
+$$
+EXECUTE ON ANY;

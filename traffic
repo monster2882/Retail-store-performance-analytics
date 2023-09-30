@@ -1,0 +1,14 @@
+-- std2_53.traffic definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.traffic;
+
+CREATE TABLE std2_53.traffic (
+	plant bpchar NULL,
+	"date" bpchar NULL,
+	"time" bpchar NULL,
+	frame_id bpchar NULL,
+	quantity int4 NULL
+)
+DISTRIBUTED BY (plant);

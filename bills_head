@@ -1,0 +1,17 @@
+-- std2_53.bills_head definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.bills_head;
+
+CREATE TABLE std2_53.bills_head (
+	billnum int8 NULL,
+	plant bpchar(4) NULL,
+	calday date NULL
+)
+DISTRIBUTED BY (billnum)
+PARTITION BY RANGE(calday) 
+          (
+          START ('2020-01-01'::date) END ('2023-01-01'::date) EVERY ('1 mon'::interval), 
+          DEFAULT PARTITION others
+          );

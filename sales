@@ -1,0 +1,27 @@
+-- std2_53.sales definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.sales;
+
+CREATE TABLE std2_53.sales (
+	"date" date NULL,
+	region varchar(20) NULL,
+	material varchar(20) NULL,
+	distr_chan varchar(100) NULL,
+	quantity int4 NULL,
+	check_nm varchar(100) NULL,
+	check_pos varchar(100) NULL
+)
+WITH (
+	appendonly=true,
+	orientation=row,
+	compresstype=zstd,
+	compresslevel=1
+)
+DISTRIBUTED BY ("date")
+PARTITION BY RANGE(date) 
+          (
+          START ('2021-01-01'::date) END ('2022-01-01'::date) EVERY ('1 mon'::interval) WITH (appendonly='true', orientation='row', compresstype=zstd, compresslevel='1'), 
+          DEFAULT PARTITION others  WITH (appendonly='true', orientation='row', compresstype=zstd, compresslevel='1')
+          );

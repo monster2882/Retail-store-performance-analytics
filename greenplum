@@ -1,0 +1,124 @@
+CREATE OR REPLACE FUNCTION std2_53.make_showcase()
+	RETURNS void
+	LANGUAGE plpgsql
+	VOLATILE
+AS $$
+	
+	
+	
+	
+	
+	
+DECLARE
+    table_name text := 'project_showcase';
+    create_table_sql text;
+    insert_data_sql text;
+BEGIN
+    create_table_sql := 'CREATE TABLE IF NOT EXISTS ' || table_name || ' (
+                            "Store code" text,
+                            "Store" text,
+                            "Turnover" numeric,
+                            "Discounts from Coupons" numeric,
+                            "Turnover with Discount" numeric,
+                            "Number of Sold Items" bigint,
+                            "Number of Checks" bigint,
+                            "Traffic" numeric,
+                            "Number of Items from Coupons" bigint,
+                            "Percentage of Discounted Items" numeric,
+                            "Average Items per Check" numeric,
+                            "Store Conversion Rate, %" numeric,
+                            "Average Check Amount" numeric,
+                            "Average Revenue per Visitor" numeric
+                        )';
+    EXECUTE create_table_sql;
+    
+    insert_data_sql := 'INSERT INTO ' || table_name || ' (
+                            "Store code",
+                            "Store",
+                            "Turnover",
+                            "Discounts from Coupons",
+                            "Turnover with Discount",
+                            "Number of Sold Items",
+                            "Number of Checks",
+                            "Traffic",
+                            "Number of Items from Coupons",
+                            "Percentage of Discounted Items",
+                            "Average Items per Check",
+                            "Store Conversion Rate, %",
+                            "Average Check Amount",
+                            "Average Revenue per Visitor"
+                        )
+    					SELECT
+                            bills.store_code AS "Store code",
+                            bills.store_name AS "Store",
+                            bills_item.total_turnover AS "Turnover",
+                            discount.total_discount AS "Discounts from Coupons",
+                            bills_item.total_turnover - discount.total_discount AS "Turnover with Discount",
+                            bills.total_items AS "Number of Sold Items",
+                            checks.total_checks AS "Number of Checks",
+                            t.total_visitors AS "Traffic",
+                            coupons.total_items AS "Number of Items from Coupons",
+                            round((coupons.total_items::numeric / bills.total_items::numeric) * 100, 1) AS "Percentage of Discounted Items",
+                            round(bills.total_items::numeric / checks.total_checks::numeric, 1) as "Average Items per Check",
+                            round((checks.total_checks::numeric / t.total_visitors::numeric) * 100, 2) as "Store Conversion Rate, %",
+                            round(bills_item.total_turnover::numeric / checks.total_checks::numeric, 1) as "Average Check Amount",
+                            round(bills_item.total_turnover / t.total_visitors, 1) as "Average Revenue per Visitor"
+                        FROM (
+                            SELECT s.store as store_code,
+                                   s.txt AS store_name,
+                                   sum(bi.qty) AS total_items
+                            FROM std2_53.bills_item bi 
+                            JOIN std2_53.bills_head bh ON bi.billnum = bh.billnum
+                            JOIN std2_53.stores s ON s.store = bh.plant
+                            GROUP BY s.store, s.txt
+                        ) AS bills
+                        JOIN (
+                            SELECT s.txt AS store_name,
+                                    s.store as store_code,
+                                   COUNT(*) AS total_items
+                            FROM std2_53.coupons c
+                            JOIN std2_53.stores s ON c.store = s.store
+                            GROUP BY s.store, s.txt
+                        ) AS coupons ON bills.store_name = coupons.store_name
+                        LEFT JOIN (
+                            SELECT plant,
+                                   SUM(quantity) AS total_visitors
+                            FROM std2_53.traffic
+                            GROUP BY plant
+                        ) AS t ON coupons.store_code = t.plant
+                        join (
+                            SELECT s.store AS store_code,
+                                   s.txt AS store_name,
+                                   COUNT(*) AS total_checks
+                            FROM std2_53.bills_head bh
+                            JOIN std2_53.stores s ON bh.plant = s.store
+                            GROUP BY s.store, s.txt
+                        ) as checks on checks.store_code = bills.store_code
+                        JOIN (
+                            SELECT bh.plant,
+                                   SUM(bi.rpa_sat) AS total_turnover
+                            FROM std2_53.bills_item bi 
+                            JOIN std2_53.bills_head bh on bi.billnum = bh.billnum 
+                            GROUP BY bh.plant
+                        ) AS bills_item on bills_item.plant = bills.store_code
+                        join (
+                            SELECT c.store AS store_name,
+                                   sum(price_in_bill) AS total_discount
+                            FROM std2_53.coupons c
+                            LEFT JOIN std2_53.coupon_info ci ON REPLACE(ci.product_bill, '' '', '''') = c.bill || c.product 
+                            GROUP BY c.store
+                        ) as discount on discount.store_name = coupons.store_code
+                        ORDER BY bills.store_code';
+
+    
+    EXECUTE insert_data_sql;
+    
+END
+
+
+
+
+
+
+$$
+EXECUTE ON ANY;

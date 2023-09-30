@@ -1,0 +1,15 @@
+-- std2_53.coupons definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.coupons;
+
+CREATE TABLE std2_53.coupons (
+	store text NULL,
+	"day" date NULL,
+	num_promo text NULL,
+	promo_type text NULL,
+	product text NULL,
+	bill int8 NULL
+)
+DISTRIBUTED REPLICATED;

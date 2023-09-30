@@ -1,0 +1,15 @@
+-- std2_53.chanel_gpfdist_ext definition
+
+-- Drop table
+
+-- DROP EXTERNAL TABLE std2_53.chanel_gpfdist_ext;
+
+CREATE EXTERNAL TABLE adb.std2_53.chanel_gpfdist_ext (
+	distr_chan varchar,
+	txtsh text
+)
+LOCATION (
+	'gpfdist://172.16.128.150:8080/chanel.csv'
+) ON ALL
+FORMAT 'CSV' ( delimiter ';' null '' escape '"' quote '"' header )
+ENCODING 'UTF8';

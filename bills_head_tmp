@@ -1,0 +1,13 @@
+-- std2_53.bills_head_tmp definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.bills_head_tmp;
+
+CREATE TABLE std2_53.bills_head_tmp (
+	billnum int8 NULL,
+	plant bpchar(4) NULL,
+	calday date NULL,
+	CONSTRAINT bills_head_1_prt_15_check CHECK (((calday >= '2021-02-01'::date) AND (calday < '2021-03-01'::date)))
+)
+DISTRIBUTED BY (billnum);

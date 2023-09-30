@@ -1,0 +1,39 @@
+-- std2_53.ch_main_project_showcase definition
+
+CREATE TABLE std2_53.ch_main_project_showcase
+(
+
+    `Store code` Nullable(String),
+
+    `Store` Nullable(String),
+
+    `Turnover` Nullable(Float64),
+
+    `Discounts from Coupons` Nullable(Float64),
+
+    `Turnover with Discount` Nullable(Float64),
+
+    `Number of Sold Items` Nullable(Int64),
+
+    `Number of Checks` Nullable(Int64),
+
+    `Traffic` Nullable(Float64),
+
+    `Number of Items from Coupons` Nullable(Int64),
+
+    `Percentage of Discounted Items` Nullable(Float64),
+
+    `Average Items per Check` Nullable(Float64),
+
+    `Store Conversion Rate,
+ %` Nullable(Float64),
+
+    `Average Check Amount` Nullable(Float64),
+
+    `Average Revenue per Visitor` Nullable(Float64)
+)
+ENGINE = PostgreSQL('192.168.214.203:5432',
+ 'adb',
+ 'main_project_showcase',
+ 'std2_53',
+ 'Z3AVa8oQAJhkc6');

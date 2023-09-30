@@ -1,0 +1,11 @@
+-- std2_53.stores definition
+
+-- Drop table
+
+-- DROP TABLE std2_53.stores;
+
+CREATE TABLE std2_53.stores (
+	store text NULL,
+	txt text NULL
+)
+DISTRIBUTED REPLICATED;

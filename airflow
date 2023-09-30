@@ -1,0 +1,74 @@
+from airflow import DAG
+from datetime import datetime, timedelta, date
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.utils.task_group import TaskGroup
+from airflow.models import Variable
+
+DB_CONN = 'gp_sapiens_std2_53'
+DB_SCHEMA = 'std2_53'
+DB_PROC_LOAD = 'f_load_full'
+FULL_LOAD_TABLES = ['coupons', 'stores', 'promos', 'promo_types']
+FULL_LOAD_FILES = {'coupons': 'coupons',
+                   'stores': 'stores',
+                   'promos': 'promos',
+                   'promo_types': 'promo_types'
+                  }
+
+MD_TABLE_LOAD_QUERY = f"select {DB_SCHEMA}.{DB_PROC_LOAD}(%(tab_name)s, %(file_name)s);"
+
+LOAD_TABLE_WITH_PART = f"select {DB_SCHEMA}.f_load_simple_partition('std2_53.bills_head', 'calday', '2020-11-01', '2021-02-28', 'gp.bills_head', 'intern', 'intern');"
+LOAD_TABLE_PXF = f"select {DB_SCHEMA}.load_pxf('std2_53.bills_item', 'gp.bills_item', 'intern', 'intern')"
+LOAD_TRAFFIC_PXF = f"select {DB_SCHEMA}.load_pxf('std2_53.traffic', 'gp.traffic', 'intern', 'intern')"
+
+MAKE_SHOWCASE = f"select std2_53.make_showcase()"
+
+default_dag_args = {
+    'depends_on_past': False,
+    'owner': 'std2_53',
+    'start_date': datetime(2023, 8, 19),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+with DAG(
+    "main_project_dag_std2_53",
+    max_active_runs=3,
+    schedule_interval=None,
+    default_args=default_dag_args,
+    catchup=False,
+) as dag:
+    
+    task_start = DummyOperator(task_id='start')
+       
+    task_part =  PostgresOperator(
+        task_id='start_insert_part', postgres_conn_id=DB_CONN, sql=LOAD_TABLE_WITH_PART
+    ) 
+    
+    task_pxf = PostgresOperator(
+        task_id='start_insert_pxf', postgres_conn_id=DB_CONN, sql=LOAD_TABLE_PXF
+    )
+    
+    task_traffic = PostgresOperator(
+        task_id='start_insert_traffic', postgres_conn_id=DB_CONN, sql=LOAD_TRAFFIC_PXF
+    )
+    
+    with TaskGroup('full_insert') as task_full_insert_tables:
+        for table in FULL_LOAD_TABLES:
+            task = PostgresOperator(
+                task_id=f'load_table_{table}',
+                postgres_conn_id=DB_CONN,
+                sql=MD_TABLE_LOAD_QUERY,
+                parameters={'tab_name': f'{DB_SCHEMA}.{table}',
+                            'file_name': f'{FULL_LOAD_FILES[table]}'
+                           },
+            )
+     
+    task_showcase = PostgresOperator(
+        task_id='make_showcase', postgres_conn_id=DB_CONN, sql=MAKE_SHOWCASE
+    ) 
+    
+    task_end = DummyOperator(task_id='end')
+        
+        
+    task_start >>  task_part >> task_pxf >> task_traffic >> task_full_insert_tables >> task_showcase >> task_end
